@@ -1,0 +1,11 @@
+# Edge Functions / Deno
+supabase/.temp/
+supabase/functions/**/.deno/
+**/deno.lock
+
+# Local env / secrets (never commit)
+.env
+.env.*
+!.env.example
+**/secrets/
+.temp/
