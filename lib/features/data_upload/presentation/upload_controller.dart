@@ -4,6 +4,7 @@ import 'package:apnipost_admin/core/errors/app_failure.dart';
 import 'package:apnipost_admin/features/categories/domain/category.dart';
 import 'package:apnipost_admin/features/categories/presentation/categories_controller.dart';
 import 'package:apnipost_admin/features/data_upload/data/browser_file_picker.dart';
+import 'package:apnipost_admin/features/data_upload/data/media_optimizer.dart';
 import 'package:apnipost_admin/features/data_upload/data/supabase_upload_repository.dart';
 import 'package:apnipost_admin/features/data_upload/domain/upload_limits.dart';
 import 'package:apnipost_admin/features/data_upload/domain/upload_media_mapping.dart';
@@ -212,7 +213,7 @@ class DataUploadController extends Notifier<DataUploadState> {
       return;
     }
 
-    await _presignAndUpload(categoryName: categoryName, targets: readyFiles);
+    await _optimizeAndUpload(categoryName: categoryName, targets: readyFiles);
   }
 
   Future<void> retryFailed() async {
@@ -265,11 +266,110 @@ class DataUploadController extends Notifier<DataUploadState> {
           )
           .toList(growable: false);
 
-      await _presignAndUpload(categoryName: categoryName, targets: targets);
+      await _optimizeAndUpload(categoryName: categoryName, targets: targets);
       return;
     }
 
     state = state.copyWith(phase: UploadPhase.completed);
+  }
+
+  /// Compresses [targets] in the browser, then uploads the ones that succeeded.
+  Future<void> _optimizeAndUpload({
+    required String categoryName,
+    required List<SelectedUploadFile> targets,
+  }) async {
+    // Sequential: the browser's hardware encoder is shared, so parallel
+    // encodes are not faster and use far more memory.
+    for (final file in targets) {
+      await _optimizeOne(file.localId);
+    }
+
+    final optimized = state.files
+        .where(
+          (file) =>
+              targets.any((t) => t.localId == file.localId) &&
+              file.status == UploadItemStatus.ready,
+        )
+        .toList(growable: false);
+
+    if (optimized.isEmpty) {
+      state = state.copyWith(phase: UploadPhase.completed);
+      return;
+    }
+
+    await _presignAndUpload(categoryName: categoryName, targets: optimized);
+  }
+
+  Future<void> _optimizeOne(String localId) async {
+    final file = _find(localId);
+    if (file == null || file.optimized) return;
+
+    _updateFile(
+      localId,
+      (current) => current.copyWith(
+        status: UploadItemStatus.optimizing,
+        optimizeProgress: 0,
+        clearError: true,
+      ),
+    );
+
+    try {
+      final result = await optimizeMedia(
+        bytes: file.bytes,
+        contentType: file.contentType,
+        onProgress: (progress) {
+          // Throttle to whole percents to avoid rebuilding on every frame.
+          final shown = _find(localId)?.optimizeProgress ?? 0;
+          if (progress - shown < 0.01) return;
+          _updateFile(
+            localId,
+            (current) => current.copyWith(optimizeProgress: progress),
+          );
+        },
+      );
+
+      debugPrint(
+        '[Upload] controller stage=optimize OK file=${file.originalFileName} '
+        'changed=${result.changed} '
+        'bytes=${file.sizeBytes}->${result.bytes.lengthInBytes} '
+        'type=${file.contentType}->${result.contentType}',
+      );
+
+      final sizeError = UploadMediaMapping.validateSize(
+        contentType: result.contentType,
+        sizeBytes: result.bytes.lengthInBytes,
+      );
+      if (sizeError != null) throw AppFailure(sizeError);
+
+      _updateFile(
+        localId,
+        (current) => current.copyWith(
+          status: UploadItemStatus.ready,
+          optimized: true,
+          bytes: result.changed ? result.bytes : null,
+          sizeBytes: result.changed ? result.bytes.lengthInBytes : null,
+          contentType: result.changed ? result.contentType : null,
+          originalSizeBytes: result.changed ? current.sizeBytes : null,
+        ),
+      );
+    } catch (error, stackTrace) {
+      final message = error is AppFailure
+          ? error.message
+          : 'Could not compress this file: '
+              '${error.toString().replaceFirst('Error: ', '')}';
+      debugPrint(
+        '[Upload] controller stage=optimize FAILED '
+        'file=${file.originalFileName} message=$message\n$stackTrace',
+      );
+      _updateFile(
+        localId,
+        (current) => current.copyWith(
+          status: UploadItemStatus.failed,
+          failureStage: UploadFailureStage.optimization,
+          errorMessage: message,
+        ),
+      );
+    }
   }
 
   Future<void> _presignAndUpload({

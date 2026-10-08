@@ -3,6 +3,7 @@ import 'package:apnipost_admin/features/auth/presentation/access_blocked_page.da
 import 'package:apnipost_admin/features/auth/presentation/auth_providers.dart';
 import 'package:apnipost_admin/features/auth/presentation/login_page.dart';
 import 'package:apnipost_admin/features/categories/presentation/categories_page.dart';
+import 'package:apnipost_admin/features/content/presentation/content_library_page.dart';
 import 'package:apnipost_admin/features/data_upload/presentation/data_upload_page.dart';
 import 'package:apnipost_admin/features/overview/presentation/overview_page.dart';
 import 'package:apnipost_admin/shared/widgets/admin_shell.dart';
@@ -73,6 +74,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.overview,
             name: 'overview',
             builder: (context, state) => const OverviewPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.library,
+            name: 'library',
+            builder: (context, state) => ContentLibraryPage(
+              initialCategory: state.uri.queryParameters['category'],
+            ),
           ),
           GoRoute(
             path: AppRoutes.categories,

@@ -17,6 +17,9 @@ class UploadProgressBanner extends StatelessWidget {
     final total = state.files.length;
     final inFlight =
         state.files.where((f) => f.status == UploadItemStatus.uploading).length;
+    final optimizing = state.files
+        .where((f) => f.status == UploadItemStatus.optimizing)
+        .length;
 
     return Card(
       child: Padding(
@@ -36,6 +39,7 @@ class UploadProgressBanner extends StatelessWidget {
               child: Text(
                 state.isUploading
                     ? 'Uploading... $uploaded / $total complete'
+                        '${optimizing > 0 ? ' · optimizing media' : ''}'
                         '${inFlight > 0 ? ' · $inFlight uploading' : ''}'
                     : 'Progress: $uploaded uploaded · $failed failed · $total total',
                 style: theme.textTheme.bodyMedium,

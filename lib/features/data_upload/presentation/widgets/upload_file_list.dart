@@ -73,7 +73,7 @@ class UploadFileList extends StatelessWidget {
                     child: Text(_typeLabel(files[index])),
                   ),
                   Expanded(
-                    child: Text(_formatBytes(files[index].sizeBytes)),
+                    child: Text(_sizeLabel(files[index])),
                   ),
                   Expanded(
                     flex: 2,
@@ -84,7 +84,10 @@ class UploadFileList extends StatelessWidget {
                     child: IconButton(
                       tooltip: 'Remove',
                       onPressed: isLocked ||
-                              files[index].status == UploadItemStatus.uploading
+                              files[index].status ==
+                                  UploadItemStatus.uploading ||
+                              files[index].status ==
+                                  UploadItemStatus.optimizing
                           ? null
                           : () => onRemove(files[index].localId),
                       icon: const Icon(Icons.close),
@@ -97,6 +100,12 @@ class UploadFileList extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _sizeLabel(SelectedUploadFile file) {
+    final original = file.originalSizeBytes;
+    if (original == null) return _formatBytes(file.sizeBytes);
+    return '${_formatBytes(original)} → ${_formatBytes(file.sizeBytes)}';
   }
 
   String _typeLabel(SelectedUploadFile file) {
@@ -153,6 +162,22 @@ class _StatusCell extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         );
+      case UploadItemStatus.optimizing:
+        final percent = ((file.optimizeProgress ?? 0) * 100).round();
+        return Row(
+          children: [
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Optimizing $percent%',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        );
       case UploadItemStatus.uploading:
         return Row(
           children: [
@@ -193,6 +218,7 @@ class _StatusCell extends StatelessWidget {
   String _failureTooltip(SelectedUploadFile file) {
     final stage = switch (file.failureStage) {
       UploadFailureStage.validation => 'Validation failed',
+      UploadFailureStage.optimization => 'Compression failed',
       UploadFailureStage.presign => 'Presign failed',
       UploadFailureStage.r2Upload => 'R2 upload failed',
       UploadFailureStage.databaseInsert =>

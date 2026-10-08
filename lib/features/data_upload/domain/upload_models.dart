@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 enum UploadItemStatus {
   ready,
+  optimizing,
   uploading,
   uploaded,
   failed,
@@ -10,6 +11,7 @@ enum UploadItemStatus {
 
 enum UploadFailureStage {
   validation,
+  optimization,
   presign,
   r2Upload,
   databaseInsert,
@@ -32,6 +34,9 @@ class SelectedUploadFile {
     this.objectKey,
     this.r2Succeeded = false,
     this.dbSucceeded = false,
+    this.optimized = false,
+    this.originalSizeBytes,
+    this.optimizeProgress,
   });
 
   final String localId;
@@ -53,6 +58,15 @@ class SelectedUploadFile {
   final String? objectKey;
   final bool r2Succeeded;
   final bool dbSucceeded;
+
+  /// True once browser compression ran (or decided the file was already small).
+  final bool optimized;
+
+  /// Size before compression; null until [optimized] changes the bytes.
+  final int? originalSizeBytes;
+
+  /// 0..1 while [status] is [UploadItemStatus.optimizing].
+  final double? optimizeProgress;
 
   PostMediaType? get mediaType =>
       UploadMediaMapping.mediaTypeForContentType(contentType);
@@ -88,6 +102,9 @@ class SelectedUploadFile {
     String? objectKey,
     bool? r2Succeeded,
     bool? dbSucceeded,
+    bool? optimized,
+    int? originalSizeBytes,
+    double? optimizeProgress,
     bool clearError = false,
     bool clearPresign = false,
   }) {
@@ -107,6 +124,9 @@ class SelectedUploadFile {
       objectKey: clearPresign && !nextR2 ? null : (objectKey ?? this.objectKey),
       r2Succeeded: nextR2,
       dbSucceeded: dbSucceeded ?? this.dbSucceeded,
+      optimized: optimized ?? this.optimized,
+      originalSizeBytes: originalSizeBytes ?? this.originalSizeBytes,
+      optimizeProgress: optimizeProgress,
     );
   }
 }

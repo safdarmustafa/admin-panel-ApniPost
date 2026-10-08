@@ -21,6 +21,12 @@ class AdminShell extends ConsumerWidget {
       path: AppRoutes.overview,
     ),
     _NavDestination(
+      label: 'Content Library',
+      icon: Icons.photo_library_outlined,
+      selectedIcon: Icons.photo_library,
+      path: AppRoutes.library,
+    ),
+    _NavDestination(
       label: 'Categories',
       icon: Icons.category_outlined,
       selectedIcon: Icons.category,

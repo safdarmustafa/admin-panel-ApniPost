@@ -269,6 +269,7 @@ class _FailedDetails extends StatelessWidget {
   String _stageLabel(UploadFailureStage? stage) {
     return switch (stage) {
       UploadFailureStage.validation => 'validation failed',
+      UploadFailureStage.optimization => 'compression failed',
       UploadFailureStage.presign => 'presign failed',
       UploadFailureStage.r2Upload => 'R2 upload failed',
       UploadFailureStage.databaseInsert =>
