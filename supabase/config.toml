@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.proxy-r2-upload]
 verify_jwt = true
+
+[functions.ringtone-r2]
+verify_jwt = true

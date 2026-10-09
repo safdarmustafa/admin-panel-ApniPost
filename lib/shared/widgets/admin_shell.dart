@@ -38,6 +38,18 @@ class AdminShell extends ConsumerWidget {
       selectedIcon: Icons.cloud_upload,
       path: AppRoutes.upload,
     ),
+    _NavDestination(
+      label: 'Ringtones',
+      icon: Icons.music_note_outlined,
+      selectedIcon: Icons.music_note,
+      path: AppRoutes.ringtones,
+    ),
+    _NavDestination(
+      label: 'Ringtone Categories',
+      icon: Icons.queue_music_outlined,
+      selectedIcon: Icons.queue_music,
+      path: AppRoutes.ringtoneCategories,
+    ),
   ];
 
   int _selectedIndex(String location) {

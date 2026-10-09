@@ -20,8 +20,9 @@ abstract final class BrowserFilePicker {
   ///
   /// Returns an empty list when the user cancels (or selects nothing).
   /// Must be invoked directly from a click/tap handler — do not `await`
-  /// anything else before calling this.
-  static Future<List<BrowserPickedFile>> pickMultiple() {
+  /// anything else before calling this. [accept] overrides the default
+  /// image/video filter (e.g. audio for ringtones).
+  static Future<List<BrowserPickedFile>> pickMultiple({String? accept}) {
     debugPrint('[BrowserFilePicker] pickMultiple() start');
 
     final completer = Completer<List<BrowserPickedFile>>();
@@ -36,7 +37,7 @@ abstract final class BrowserFilePicker {
     input.multiple = true;
     debugPrint('[BrowserFilePicker] multiple=true set');
 
-    input.accept = _accept;
+    input.accept = accept ?? _accept;
     debugPrint('[BrowserFilePicker] accept set');
 
     // Reset so choosing the same file again still fires `change`.

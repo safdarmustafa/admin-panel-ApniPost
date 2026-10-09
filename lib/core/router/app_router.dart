@@ -6,6 +6,8 @@ import 'package:apnipost_admin/features/categories/presentation/categories_page.
 import 'package:apnipost_admin/features/content/presentation/content_library_page.dart';
 import 'package:apnipost_admin/features/data_upload/presentation/data_upload_page.dart';
 import 'package:apnipost_admin/features/overview/presentation/overview_page.dart';
+import 'package:apnipost_admin/features/ringtones/presentation/ringtone_categories_page.dart';
+import 'package:apnipost_admin/features/ringtones/presentation/ringtones_page.dart';
 import 'package:apnipost_admin/shared/widgets/admin_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -91,6 +93,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.upload,
             name: 'upload',
             builder: (context, state) => const DataUploadPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.ringtones,
+            name: 'ringtones',
+            builder: (context, state) => const RingtonesPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.ringtoneCategories,
+            name: 'ringtone-categories',
+            builder: (context, state) => const RingtoneCategoriesPage(),
           ),
         ],
       ),
